@@ -1,0 +1,116 @@
+---
+title: "project"
+author: "Parthsarthy Nandi"
+date: "2023-01-28"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+*Fertility Dataset*
+
+*About the Data - Data was collect from 100 participants whose seminal composition was examined for the prediction of fertility among males.*
+*10 attributes where considered for that purpose, each having effect on the Diagnosis.*
+
+    Attributes are:
+    1. Season in which the analysis is performed
+      a. Winter - -1
+      b. Spring - -0.33
+      c. Summer - 0.33
+      d. Fall - 1
+    2. Age at the time of analysis 18-36 -> (0,1)
+    3. Childish diseases (ie , chicken pox, measles, mumps, polio) Yes or No -> (0,1)
+    4. Accident or serious trauma 1) yes, 2) no -> (0, 1)
+    5. Surgical intervention 1) yes, 2) no. (0, 1)
+    6. High fevers in the last year 1) less than three months ago, 2) more than three months ago, 3) no. (-1, 0, 1)
+    7. Frequency of alcohol consumption 1) several times a day, 2) every day, 3) several times a week, 4) once a week, 5) hardly ever or never (0, 1)
+    8. Smoking habit 1) never, 2) occasional 3) daily. (-1, 0, 1)
+    9. Number of hours spent sitting per day ene-16 (0, 1)
+    10. Output: Diagnosis normal (N), altered (O)
+    
+    Initially the data was in a .txt format which was converted to .csv with the help of Excel and the columns were named.
+
+
+*Load the Data into the environment.*
+```{r}
+dataproj <- read.csv("fertility.csv")
+head(dataproj, 10)
+str(dataproj)
+summary(dataproj)
+```
+
+*Data Screening*
+
+    Naming the factors.
+      
+```{r}
+dataproj$Season <- factor(dataproj$Season, levels = c(-1,-0.33,0.33,1), labels = c("Winter","Spring","Summer","Fall"))
+dataproj$Childish.disease <- factor(dataproj$Childish.disease, levels = c(0,1), labels = c("Yes","No"))
+dataproj$Trauma <- factor(dataproj$Trauma, levels = c(0,1), labels = c("Yes","No"))
+dataproj$Surgical.Intervetion <- factor(dataproj$Surgical.Intervetion, levels = c(0,1), labels = c("Yes","No"))
+dataproj$High.Fevers.in.Last.year <- factor(dataproj$High.Fevers.in.Last.year, levels = c(-1,0,1), labels = c("<3",">3","No"))
+dataproj$Smoking.Habit <- factor(dataproj$Smoking.Habit, levels = c(-1,0,1), labels = c("Never","Occasional","Daily"))
+```
+
+
+    Data after screening
+```{r}
+head(dataproj,10)
+```
+##Cramer V Season/Output
+```{r}
+#hist(dataproj$Age)
+#coff <- cor
+
+required_packages <- c('MASS', 'rcompanion', 'lsr', 'vcd', 'DescTools')
+for (p in required_packages) {
+  if(!require(p,character.only = TRUE)) {
+    install.packages(p, dep = TRUE)
+  }
+}
+
+table(dataproj$Season,dataproj$Output)
+
+library('vcd')
+assocstats(xtabs(~dataproj$Season + dataproj$Output))
+```
+##Cramer V Age/Output
+```{r}
+assocstats(xtabs(~dataproj$Age + dataproj$Output))
+```
+##Cramer V Childish Disease/Output
+```{r}
+assocstats(xtabs(~dataproj$Childish.disease + dataproj$Output))
+```
+
+##Cramer V Trauma/Output
+```{r}
+assocstats(xtabs(~dataproj$Trauma + dataproj$Output))
+```
+
+##Cramer V Surgical.Intervetion/Output
+```{r}
+assocstats(xtabs(~dataproj$Surgical.Intervetion + dataproj$Output))
+```
+
+##Cramer V High.Fevers.in.Last.year/Output
+```{r}
+assocstats(xtabs(~dataproj$High.Fevers.in.Last.year + dataproj$Output))
+```
+
+##Cramer V Alcohol.Consumption/Output
+```{r}
+assocstats(xtabs(~dataproj$Alcohol.Consumption + dataproj$Output))
+```
+
+##Cramer V Smoking.Habit/Output
+```{r}
+assocstats(xtabs(~dataproj$Smoking.Habit + dataproj$Output))
+```
+
+##Cramer V Number.of.hours.spent.sitting/Output
+```{r}
+assocstats(xtabs(~dataproj$Number.of.hours.spent.sitting + dataproj$Output))
+```
+

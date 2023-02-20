@@ -1,0 +1,148 @@
+---
+title: "project"
+author: "Parthsarthy Nandi"
+date: "2023-01-28"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+*Fertility Dataset*
+
+*About the Data - Data was collect from 100 participants whose seminal composition was examined for the prediction of fertility among males.*
+*10 attributes where considered for that purpose, each having effect on the Diagnosis.*
+
+    Attributes are:
+    1. Season in which the analysis is performed
+      a. Winter - -1
+      b. Spring - -0.33
+      c. Summer - 0.33
+      d. Fall - 1
+    2. Age at the time of analysis 18-36 -> (0,1)
+    3. Childish diseases (ie , chicken pox, measles, mumps, polio) Yes or No -> (0,1)
+    4. Accident or serious trauma 1) yes, 2) no -> (0, 1)
+    5. Surgical intervention 1) yes, 2) no. (0, 1)
+    6. High fevers in the last year 1) less than three months ago, 2) more than three months ago, 3) no. (-1, 0, 1)
+    7. Frequency of alcohol consumption 1) several times a day, 2) every day, 3) several times a week, 4) once a week, 5) hardly ever or never (0, 1)
+    8. Smoking habit 1) never, 2) occasional 3) daily. (-1, 0, 1)
+    9. Number of hours spent sitting per day ene-16 (0, 1)
+    10. Output: Diagnosis normal (N), altered (O)
+    
+    Initially the data was in a .txt format which was converted to .csv with the help of Excel and the columns were named.
+
+
+*Load the Data into the environment.*
+```{r}
+dataproj <- read.csv("fertility.csv")
+head(dataproj, 10)
+```
+
+*Checking the data for NA's and other stats.*
+
+```{r}
+library("dplyr")
+summary(dataproj)
+colSums(is.na(dataproj))
+```
+*Changing Column Names for easy graph plotting*
+
+```{r}
+colnames(dataproj) <- c("Season","Age","Childdi","Trauma","Surg","Fever","Alcohl","Smoke","Sitting","Diagnosis")
+```
+
+*Data Screening*
+
+*Since this is is a dataset with categorical values we need to name the factors for better understanding of the data.*
+      
+```{r}
+#dataproj$Season <- factor(dataproj$Season, levels = c(-1,-0.33,0.33,1), labels = c("Winter","Spring","Summer","Fall"))
+#dataproj$Childdi <- factor(dataproj$Childdi, levels = c(0,1), labels = c("Yes","No"))
+#dataproj$Trauma <- factor(dataproj$Trauma, levels = c(0,1), labels = c("Yes","No"))
+#dataproj$Surg <- factor(dataproj$Surg, levels = c(0,1), labels = c("Yes","No"))
+#dataproj$Fever<- factor(dataproj$Fever, levels = c(-1,0,1), labels = c("<3",">3","No"))
+#dataproj$Smoke <- factor(dataproj$Smoke, levels = c(-1,0,1), labels = c("Never","Occasional","Daily"))
+```
+
+
+*Data after screening*
+```{r}
+head(dataproj,5)
+```
+
+*Frequency Table*
+*Hist.data.frame creates a matrix of histograms*
+```{r}
+#install.packages("Hmisc")
+library(Hmisc)
+hist.data.frame(dataproj)
+```
+
+*Our data base has mostly categorical datasets with values ranging from 0 to 1, using as.numeric we are changing the categorical char values to numeric*
+```{r}
+#factors are represented in R as integres with the first factor as 1
+#to change use -1 
+dataproj$Diagnosis <- as.numeric(as.factor(dataproj$Diagnosis))-1
+```
+
+*Creating a Scatter plot with all the values exceept the Diagonosis*
+```{r}
+#install.packages("ggplot2")       
+#install.packages("GGally")
+library("ggplot2")                     
+library("GGally")
+ggpairs(dataproj)
+```
+
+*Hpythesis Testing*
+      
+    H0: Age, Alcohol consumption, smoking and sitting has an effect on the diagnosis of the person
+    H1: Age, Alcohol consumption, smoking and sitting has an effect on the diagnosis of the person
+    
+*We can see the data is not highly correlated hence there is a low chance of adding predictor variables inn the regression*
+*Creating a logistic regression model using the glm function*
+
+```{r}
+library("caTools")
+set.seed(1) # settting sedd to reproduce the same output
+sample <- sample.split(dataproj$Diagnosis, SplitRatio = 0.7) #data is divided innto 70/30 ratio
+traindata <- subset(dataproj, sample == TRUE)
+testdata <- subset(dataproj, sample == FALSE)
+model = glm(Diagnosis~ Age+Alcohl+Smoke+Sitting,data = traindata,family = "binomial")
+summary(model)
+#(model)
+```
+
+*From the summary we can see that Age, Alcohl, Smoking and Sitting is not significant attribute in prediction of Diagnosis*
+
+    Reject H0.
+    
+*To find out which attributes are aactually having an effect on the Diagnosis*
+
+```{r}
+model2 = glm(Diagnosis~.,data = traindata,family = "binomial")
+summary(model2)
+```
+
+*From this we can see that Trauma and Fever are two significant factor in the diagnosis.*
+
+*Now running Anova to check the goodness of fit of the attributes in the model*
+```{r}
+anova(model2, test = "Chisq")
+```
+
+*From this we can conculde that fever is indeed a deciding factor in our model*
+*Now we can try to predict the values using the test data*
+
+```{r}
+
+predictmodel <- predict(object = model,  type = "response", newdata = testdata)
+#head(predictmodel)
+#Normalizing the output
+modelpred<-ifelse(predictmodel>0.5,1,0)
+matrixconf <- table(testdata[,10],modelpred)
+
+accuracymodel <- matrixconf[1,1]/sum(matrixconf) 
+accuracymodel
+
+```
